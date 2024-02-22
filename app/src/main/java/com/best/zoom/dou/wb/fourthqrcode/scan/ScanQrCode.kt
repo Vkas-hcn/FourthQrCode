@@ -39,7 +39,7 @@ class ScanQrCode  : BaseActivity<ScanViewModel, ActivityScanQrBinding>() {
     var isOpen = false
     private fun setQrScan() {
         val analyzeCallback: CodeUtils.AnalyzeCallback = object : CodeUtils.AnalyzeCallback {
-            override fun onAnalyzeSuccess(mBitmap: Bitmap, result: String) {
+            override fun onAnalyzeSuccess(mBitmap: Bitmap?, result: String?) {
                 toEndPage(result)
             }
 
@@ -69,8 +69,8 @@ class ScanQrCode  : BaseActivity<ScanViewModel, ActivityScanQrBinding>() {
         CodeUtils.isLightEnable(isOpen)
     }
 
-    fun toEndPage(data:String){
-        if (data.isNotEmpty()) {
+    fun toEndPage(data:String?){
+        if (data?.isNotEmpty() == true) {
             navigateToWithParams(ScanResult::class.java, Bundle().apply {
                 putString("result_text",data)
             })
@@ -92,7 +92,7 @@ class ScanQrCode  : BaseActivity<ScanViewModel, ActivityScanQrBinding>() {
                 try {
                     val mBitmap = MediaStore.Images.Media.getBitmap(cr, uri)
                     analyzeBitmap(mBitmap,object : CodeUtils.AnalyzeCallback {
-                        override fun onAnalyzeSuccess(mBitmap: Bitmap, result: String) {
+                        override fun onAnalyzeSuccess(mBitmap: Bitmap?, result: String?) {
                             toEndPage(result)
                         }
 

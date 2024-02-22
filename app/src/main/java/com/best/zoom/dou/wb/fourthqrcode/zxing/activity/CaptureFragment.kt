@@ -1,121 +1,104 @@
-package com.best.zoom.dou.wb.fourthqrcode.zxing.activity;
+package com.best.zoom.dou.wb.fourthqrcode.zxing.activity
 
-import android.graphics.Bitmap;
-import android.hardware.Camera;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.os.Bundle;
-import android.os.Handler;
-import android.text.TextUtils;
-import android.view.LayoutInflater;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
+import android.content.Context
+import android.graphics.Bitmap
+import android.hardware.Camera
+import android.media.AudioManager
+import android.media.MediaPlayer
+import android.media.MediaPlayer.OnCompletionListener
+import android.os.Bundle
+import android.os.Handler
+import android.text.TextUtils
+import android.view.LayoutInflater
+import android.view.SurfaceHolder
+import android.view.SurfaceView
+import android.view.View
+import android.view.ViewGroup
+import androidx.fragment.app.Fragment
+import com.best.zoom.dou.wb.fourthqrcode.R
+import com.best.zoom.dou.wb.fourthqrcode.zxing.activity.CodeUtils.AnalyzeCallback
+import com.best.zoom.dou.wb.fourthqrcode.zxing.camera.CameraManager
+import com.best.zoom.dou.wb.fourthqrcode.zxing.decoding.CaptureActivityHandler
+import com.best.zoom.dou.wb.fourthqrcode.zxing.decoding.InactivityTimer
+import com.best.zoom.dou.wb.fourthqrcode.zxing.view.ViewfinderView
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.Result
+import java.util.Vector
 
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
-import com.best.zoom.dou.wb.fourthqrcode.R;
-import com.best.zoom.dou.wb.fourthqrcode.zxing.camera.CameraManager;
-import com.best.zoom.dou.wb.fourthqrcode.zxing.decoding.CaptureActivityHandler;
-import com.best.zoom.dou.wb.fourthqrcode.zxing.decoding.InactivityTimer;
-import com.best.zoom.dou.wb.fourthqrcode.zxing.view.ViewfinderView;
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.Result;
-
-
-import java.util.Vector;
-
-
-public class CaptureFragment extends Fragment implements SurfaceHolder.Callback {
-
-    private CaptureActivityHandler handler;
-    private ViewfinderView viewfinderView;
-    private boolean hasSurface;
-    private Vector<BarcodeFormat> decodeFormats;
-    private String characterSet;
-    private InactivityTimer inactivityTimer;
-    private MediaPlayer mediaPlayer;
-    private boolean playBeep;
-    private static final float BEEP_VOLUME = 0.10f;
-    private boolean vibrate;
-    private SurfaceView surfaceView;
-    private SurfaceHolder surfaceHolder;
-    private CodeUtils.AnalyzeCallback analyzeCallback;
-    private Camera camera;
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-
-        CameraManager.init(getActivity().getApplication());
-
-        hasSurface = false;
-        inactivityTimer = new InactivityTimer(this.getActivity());
+class CaptureFragment : Fragment(), SurfaceHolder.Callback {
+    private var handler: CaptureActivityHandler? = null
+    private var viewfinderView: ViewfinderView? = null
+    private var hasSurface = false
+    private var decodeFormats: Vector<BarcodeFormat>? = null
+    private var characterSet: String? = null
+    private var inactivityTimer: InactivityTimer? = null
+    private val mediaPlayer: MediaPlayer? = null
+    private var playBeep = false
+    private var vibrate = false
+    private var surfaceView: SurfaceView? = null
+    private var surfaceHolder: SurfaceHolder? = null
+    var analyzeCallback: AnalyzeCallback? = null
+    private var camera: Camera? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        CameraManager.init(activity?.application)
+        hasSurface = false
+        inactivityTimer = InactivityTimer(this.activity)
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-
-        Bundle bundle = getArguments();
-        View view = null;
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val bundle = arguments
+        var view: View? = null
         if (bundle != null) {
-            int layoutId = bundle.getInt(CodeUtils.LAYOUT_ID);
+            val layoutId = bundle.getInt(CodeUtils.LAYOUT_ID)
             if (layoutId != -1) {
-                view = inflater.inflate(layoutId, null);
+                view = inflater.inflate(layoutId, null)
             }
         }
-
         if (view == null) {
-            view = inflater.inflate(R.layout.fragment_capture, null);
+            view = inflater.inflate(R.layout.fragment_capture, null)
         }
-
-        viewfinderView = (ViewfinderView) view.findViewById(R.id.viewfinder_view);
-        surfaceView = (SurfaceView) view.findViewById(R.id.preview_view);
-        surfaceHolder = surfaceView.getHolder();
-
-        return view;
+        viewfinderView = view!!.findViewById<View>(R.id.viewfinder_view) as ViewfinderView
+        surfaceView = view.findViewById<View>(R.id.preview_view) as SurfaceView
+        surfaceHolder = surfaceView!!.holder
+        return view
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
+    override fun onResume() {
+        super.onResume()
         if (hasSurface) {
-            initCamera(surfaceHolder);
+            initCamera(surfaceHolder)
         } else {
-            surfaceHolder.addCallback(this);
-            surfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+            surfaceHolder!!.addCallback(this)
+            surfaceHolder!!.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS)
         }
-        decodeFormats = null;
-        characterSet = null;
-
-        playBeep = true;
-        AudioManager audioService = (AudioManager) getActivity().getSystemService(getActivity().AUDIO_SERVICE);
-        if (audioService.getRingerMode() != AudioManager.RINGER_MODE_NORMAL) {
-            playBeep = false;
+        decodeFormats = null
+        characterSet = null
+        playBeep = true
+        val audioService = activity?.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        if (audioService.ringerMode != AudioManager.RINGER_MODE_NORMAL) {
+            playBeep = false
         }
-        vibrate = true;
+        vibrate = true
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
+    override fun onPause() {
+        super.onPause()
         if (handler != null) {
-            handler.quitSynchronously();
-            handler = null;
+            handler!!.quitSynchronously()
+            handler = null
         }
-        CameraManager.get().closeDriver();
+        CameraManager.get().closeDriver()
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        inactivityTimer.shutdown();
+    override fun onDestroy() {
+        super.onDestroy()
+        inactivityTimer!!.shutdown()
     }
-
 
     /**
      * Handler scan result
@@ -123,106 +106,84 @@ public class CaptureFragment extends Fragment implements SurfaceHolder.Callback 
      * @param result
      * @param barcode
      */
-    public void handleDecode(Result result, Bitmap barcode) {
-        inactivityTimer.onActivity();
-        if (result == null || TextUtils.isEmpty(result.getText())) {
+    fun handleDecode(result: Result?, barcode: Bitmap?) {
+        inactivityTimer!!.onActivity()
+        if (result == null || TextUtils.isEmpty(result.text)) {
             if (analyzeCallback != null) {
-                analyzeCallback.onAnalyzeFailed();
+                analyzeCallback!!.onAnalyzeFailed()
             }
         } else {
             if (analyzeCallback != null) {
-                analyzeCallback.onAnalyzeSuccess(barcode, result.getText());
+                analyzeCallback!!.onAnalyzeSuccess(barcode, result.text)
             }
         }
     }
 
-    private void initCamera(SurfaceHolder surfaceHolder) {
-        try {
-            CameraManager.get().openDriver(surfaceHolder);
-            camera = CameraManager.get().getCamera();
-        } catch (Exception e) {
+    private fun initCamera(surfaceHolder: SurfaceHolder?) {
+        camera = try {
+            CameraManager.get().openDriver(surfaceHolder)
+            CameraManager.get().camera
+        } catch (e: Exception) {
             if (callBack != null) {
-                callBack.callBack(e);
+                callBack!!.callBack(e)
             }
-            return;
+            return
         }
         if (callBack != null) {
-            callBack.callBack(null);
+            callBack!!.callBack(null)
         }
         if (handler == null) {
-            handler = new CaptureActivityHandler(this, decodeFormats, characterSet, viewfinderView);
+            handler = CaptureActivityHandler(this, decodeFormats, characterSet, viewfinderView)
         }
     }
 
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                               int height) {
-
+    override fun surfaceChanged(
+        holder: SurfaceHolder, format: Int, width: Int,
+        height: Int
+    ) {
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
+    override fun surfaceCreated(holder: SurfaceHolder) {
         if (!hasSurface) {
-            hasSurface = true;
-            initCamera(holder);
+            hasSurface = true
+            initCamera(holder)
         }
-
     }
 
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        hasSurface = false;
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        hasSurface = false
         if (camera != null) {
-            if (camera != null && CameraManager.get().isPreviewing()) {
-                if (!CameraManager.get().isUseOneShotPreviewCallback()) {
-                    camera.setPreviewCallback(null);
+            if (camera != null && CameraManager.get().isPreviewing) {
+                if (!CameraManager.get().isUseOneShotPreviewCallback) {
+                    camera!!.setPreviewCallback(null)
                 }
-                camera.stopPreview();
-                CameraManager.get().getPreviewCallback().setHandler(null, 0);
-                CameraManager.get().getAutoFocusCallback().setHandler(null, 0);
-                CameraManager.get().setPreviewing(false);
+                camera!!.stopPreview()
+                CameraManager.get().previewCallback.setHandler(null, 0)
+                CameraManager.get().autoFocusCallback.setHandler(null, 0)
+                CameraManager.get().isPreviewing = false
             }
         }
     }
 
-    public Handler getHandler() {
-        return handler;
+    fun getHandler(): Handler? {
+        return handler
     }
 
-    public void drawViewfinder() {
-        viewfinderView.drawViewfinder();
-
+    fun drawViewfinder() {
+        viewfinderView!!.drawViewfinder()
     }
-
-
-
-
 
     /**
      * When the beep has finished playing, rewind to queue up another one.
      */
-    private final MediaPlayer.OnCompletionListener beepListener = new MediaPlayer.OnCompletionListener() {
-        public void onCompletion(MediaPlayer mediaPlayer) {
-            mediaPlayer.seekTo(0);
-        }
-    };
-
-    public CodeUtils.AnalyzeCallback getAnalyzeCallback() {
-        return analyzeCallback;
-    }
-
-    public void setAnalyzeCallback(CodeUtils.AnalyzeCallback analyzeCallback) {
-        this.analyzeCallback = analyzeCallback;
-    }
-
-    @Nullable
-    CameraInitCallBack callBack;
+    private val beepListener = OnCompletionListener { mediaPlayer -> mediaPlayer.seekTo(0) }
+    var callBack: CameraInitCallBack? = null
 
     /**
      * Set callback for Camera check whether Camera init success or not.
      */
-    public void setCameraInitCallBack(CameraInitCallBack callBack) {
-        this.callBack = callBack;
+    fun setCameraInitCallBack(callBack: CameraInitCallBack?) {
+        this.callBack = callBack
     }
 
     interface CameraInitCallBack {
@@ -230,8 +191,10 @@ public class CaptureFragment extends Fragment implements SurfaceHolder.Callback 
          * Callback for Camera init result.
          * @param e If is's null,means success.otherwise Camera init failed with the Exception.
          */
-        void callBack(Exception e);
+        fun callBack(e: Exception?)
     }
 
-
+    companion object {
+        private const val BEEP_VOLUME = 0.10f
+    }
 }

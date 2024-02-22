@@ -1,186 +1,166 @@
-package com.best.zoom.dou.wb.fourthqrcode.zxing.activity;
+package com.best.zoom.dou.wb.fourthqrcode.zxing.activity
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.hardware.Camera;
-import android.os.Bundle;
-import android.text.TextUtils;
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.hardware.Camera
+import android.os.Bundle
+import android.text.TextUtils
+import com.best.zoom.dou.wb.fourthqrcode.zxing.camera.BitmapLuminanceSource
+import com.best.zoom.dou.wb.fourthqrcode.zxing.camera.CameraManager
+import com.best.zoom.dou.wb.fourthqrcode.zxing.decoding.DecodeFormatManager
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.DecodeHintType
+import com.google.zxing.EncodeHintType
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.Result
+import com.google.zxing.WriterException
+import com.google.zxing.common.HybridBinarizer
+import com.google.zxing.qrcode.QRCodeWriter
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import java.util.Hashtable
+import java.util.Vector
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.BinaryBitmap;
-import com.google.zxing.DecodeHintType;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.MultiFormatReader;
-import com.google.zxing.Result;
-import com.google.zxing.WriterException;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.common.HybridBinarizer;
-import com.google.zxing.qrcode.QRCodeWriter;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
-import com.best.zoom.dou.wb.fourthqrcode.R;
-import com.best.zoom.dou.wb.fourthqrcode.zxing.camera.BitmapLuminanceSource;
-import com.best.zoom.dou.wb.fourthqrcode.zxing.camera.CameraManager;
-import com.best.zoom.dou.wb.fourthqrcode.zxing.decoding.DecodeFormatManager;
-
-
-import java.util.Hashtable;
-import java.util.Vector;
-
-
-public class CodeUtils {
-
-    public static final String RESULT_TYPE = "result_type";
-    public static final String RESULT_STRING = "result_string";
-    public static final int RESULT_SUCCESS = 1;
-    public static final int RESULT_FAILED = 2;
-
-    public static final String LAYOUT_ID = "layout_id";
-
-
-
-
-    public static void analyzeBitmap( Bitmap mBitmap, AnalyzeCallback analyzeCallback) {
-
-
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        options.inJustDecodeBounds = false;
-
-        int sampleSize = (int) (options.outHeight / (float) 400);
-
-        if (sampleSize <= 0)
-            sampleSize = 1;
-        options.inSampleSize = sampleSize;
-
-        MultiFormatReader multiFormatReader = new MultiFormatReader();
-
-        Hashtable<DecodeHintType, Object> hints = new Hashtable<DecodeHintType, Object>(2);
-        Vector<BarcodeFormat> decodeFormats = new Vector<BarcodeFormat>();
+object CodeUtils {
+    const val RESULT_TYPE = "result_type_qr"
+    const val RESULT_STRING = "result_string_qr"
+    const val RESULT_SUCCESS = 1
+    const val RESULT_FAILED = 2
+    const val LAYOUT_ID = "layout_id"
+    fun analyzeBitmap(mBitmap: Bitmap?, analyzeCallback: AnalyzeCallback?) {
+        val options = BitmapFactory.Options()
+        options.inJustDecodeBounds = true
+        options.inJustDecodeBounds = false
+        var sampleSize = (options.outHeight / 400f).toInt()
+        if (sampleSize <= 0) sampleSize = 1
+        options.inSampleSize = sampleSize
+        val multiFormatReader = MultiFormatReader()
+        val hints = Hashtable<DecodeHintType, Any?>(2)
+        var decodeFormats = Vector<BarcodeFormat?>()
         if (decodeFormats == null || decodeFormats.isEmpty()) {
-            decodeFormats = new Vector<BarcodeFormat>();
-            decodeFormats.addAll(DecodeFormatManager.ONE_D_FORMATS);
-            decodeFormats.addAll(DecodeFormatManager.QR_CODE_FORMATS);
-            decodeFormats.addAll(DecodeFormatManager.DATA_MATRIX_FORMATS);
+            decodeFormats = Vector()
+            decodeFormats.addAll(DecodeFormatManager.ONE_D_FORMATS)
+            decodeFormats.addAll(DecodeFormatManager.QR_CODE_FORMATS)
+            decodeFormats.addAll(DecodeFormatManager.DATA_MATRIX_FORMATS)
         }
-        hints.put(DecodeHintType.POSSIBLE_FORMATS, decodeFormats);
-        multiFormatReader.setHints(hints);
-
-        Result rawResult = null;
+        hints[DecodeHintType.POSSIBLE_FORMATS] = decodeFormats
+        multiFormatReader.setHints(hints)
+        var rawResult: Result? = null
         try {
-            rawResult = multiFormatReader.decodeWithState(new BinaryBitmap(new HybridBinarizer(new BitmapLuminanceSource(mBitmap))));
-        } catch (Exception e) {
-            e.printStackTrace();
+            rawResult = multiFormatReader.decodeWithState(
+                BinaryBitmap(
+                    HybridBinarizer(
+                        BitmapLuminanceSource(mBitmap)
+                    )
+                )
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-
         if (rawResult != null) {
-            if (analyzeCallback != null) {
-                analyzeCallback.onAnalyzeSuccess(mBitmap, rawResult.getText());
-            }
+            analyzeCallback?.onAnalyzeSuccess(mBitmap, rawResult.text)
         } else {
-            if (analyzeCallback != null) {
-                analyzeCallback.onAnalyzeFailed();
-            }
+            analyzeCallback?.onAnalyzeFailed()
         }
     }
 
-    public static Bitmap createImage(String text,int w,int h,Bitmap logo) {
+    fun createImage(text: String?, w: Int, h: Int, logo: Bitmap?): Bitmap? {
         if (TextUtils.isEmpty(text)) {
-            return null;
+            return null
         }
         try {
-            Bitmap scaleLogo = getScaleLogo(logo,w,h);
-
-            int offsetX = w / 2;
-            int offsetY = h / 2;
-
-            int scaleWidth = 0;
-            int scaleHeight = 0;
+            val scaleLogo = getScaleLogo(logo, w, h)
+            var offsetX = w / 2
+            var offsetY = h / 2
+            var scaleWidth = 0
+            var scaleHeight = 0
             if (scaleLogo != null) {
-                scaleWidth = scaleLogo.getWidth();
-                scaleHeight = scaleLogo.getHeight();
-                offsetX = (w - scaleWidth) / 2;
-                offsetY = (h - scaleHeight) / 2;
+                scaleWidth = scaleLogo.width
+                scaleHeight = scaleLogo.height
+                offsetX = (w - scaleWidth) / 2
+                offsetY = (h - scaleHeight) / 2
             }
-            Hashtable<EncodeHintType, Object> hints = new Hashtable<EncodeHintType, Object>();
-            hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
-            //容错级别
-            hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
-            //设置空白边距的宽度
-            hints.put(EncodeHintType.MARGIN, 0);
-            BitMatrix bitMatrix = new QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, w, h, hints);
-            int[] pixels = new int[w * h];
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    if(x >= offsetX && x < offsetX + scaleWidth && y>= offsetY && y < offsetY + scaleHeight){
-                        int pixel = scaleLogo.getPixel(x-offsetX,y-offsetY);
-                        if(pixel == 0){
-                            if(bitMatrix.get(x, y)){
-                                pixel = 0xff000000;
-                            }else{
-                                pixel = 0xffffffff;
+            val hints = Hashtable<EncodeHintType, Any?>()
+            hints[EncodeHintType.CHARACTER_SET] = "utf-8"
+            hints[EncodeHintType.ERROR_CORRECTION] = ErrorCorrectionLevel.H
+            hints[EncodeHintType.MARGIN] = 0
+            val bitMatrix = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, w, h, hints)
+            val pixels = IntArray(w * h)
+            for (y in 0 until h) {
+                for (x in 0 until w) {
+                    if (x >= offsetX && x < offsetX + scaleWidth && y >= offsetY && y < offsetY + scaleHeight) {
+                        var pixel = scaleLogo!!.getPixel(x - offsetX, y - offsetY)
+                        if (pixel == 0) {
+                            pixel = if (bitMatrix[x, y]) {
+                                -0x1000000
+                            } else {
+                                -0x1
                             }
                         }
-                        pixels[y * w + x] = pixel;
-                    }else{
-                        if (bitMatrix.get(x, y)) {
-                            pixels[y * w + x] = 0xff000000;
+                        pixels[y * w + x] = pixel
+                    } else {
+                        if (bitMatrix[x, y]) {
+                            pixels[y * w + x] = -0x1000000
                         } else {
-                            pixels[y * w + x] = 0xffffffff;
+                            pixels[y * w + x] = -0x1
                         }
                     }
                 }
             }
-            Bitmap bitmap = Bitmap.createBitmap(w, h,
-                    Bitmap.Config.ARGB_8888);
-            bitmap.setPixels(pixels, 0, w, 0, 0, w, h);
-            return bitmap;
-        } catch (WriterException e) {
-            e.printStackTrace();
+            val bitmap = Bitmap.createBitmap(
+                w, h,
+                Bitmap.Config.ARGB_8888
+            )
+            bitmap.setPixels(pixels, 0, w, 0, 0, w, h)
+            return bitmap
+        } catch (e: WriterException) {
+            e.printStackTrace()
         }
-        return null;
+        return null
     }
 
-    private static Bitmap getScaleLogo(Bitmap logo,int w,int h){
-        if(logo == null)return null;
-        Matrix matrix = new Matrix();
-        float scaleFactor = Math.min(w * 1.0f / 5 / logo.getWidth(), h * 1.0f / 5 /logo.getHeight());
-        matrix.postScale(scaleFactor,scaleFactor);
-        Bitmap result = Bitmap.createBitmap(logo, 0, 0, logo.getWidth(),   logo.getHeight(), matrix, true);
-        return result;
+    private fun getScaleLogo(
+        logo: Bitmap?,
+        w: Int,
+        h: Int
+    ): Bitmap? {
+        if (logo == null) return null
+        val matrix = Matrix()
+        val scaleFactor =
+            Math.min(w * 1.0f / 5 / logo.width, h * 1.0f / 5 / logo.height)
+        matrix.postScale(scaleFactor, scaleFactor)
+        return Bitmap.createBitmap(logo, 0, 0, logo.width, logo.height, matrix, true)
     }
 
-    public interface AnalyzeCallback{
-
-        public void onAnalyzeSuccess(Bitmap mBitmap, String result);
-
-        public void onAnalyzeFailed();
-    }
-
-    public static void setFragmentArgs(CaptureFragment captureFragment, int layoutId) {
+    fun setFragmentArgs(captureFragment: CaptureFragment?, layoutId: Int) {
         if (captureFragment == null || layoutId == -1) {
-            return;
+            return
         }
-
-        Bundle bundle = new Bundle();
-        bundle.putInt(LAYOUT_ID, layoutId);
-        captureFragment.setArguments(bundle);
+        val bundle = Bundle()
+        bundle.putInt(LAYOUT_ID, layoutId)
+        captureFragment.arguments = bundle
     }
 
-    public static void isLightEnable(boolean isEnable) {
-        Camera camera = CameraManager.get().getCamera();
+    fun isLightEnable(isEnable: Boolean) {
+        val camera = CameraManager.get().camera
         if (isEnable) {
             if (camera != null) {
-                Camera.Parameters parameter = camera.getParameters();
-                parameter.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-                camera.setParameters(parameter);
+                val parameter = camera.parameters
+                parameter.flashMode = Camera.Parameters.FLASH_MODE_TORCH
+                camera.parameters = parameter
             }
         } else {
             if (camera != null) {
-                Camera.Parameters parameter = camera.getParameters();
-                parameter.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                camera.setParameters(parameter);
+                val parameter = camera.parameters
+                parameter.flashMode = Camera.Parameters.FLASH_MODE_OFF
+                camera.parameters = parameter
             }
         }
+    }
+
+    interface AnalyzeCallback {
+        fun onAnalyzeSuccess(mBitmap: Bitmap?, result: String?)
+        fun onAnalyzeFailed()
     }
 }
