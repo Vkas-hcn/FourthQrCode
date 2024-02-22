@@ -1,0 +1,61 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+    id 'stringfog'
+}
+import com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator
+import com.github.megatronking.stringfog.plugin.StringFogMode
+stringfog {
+    implementation 'com.github.megatronking.stringfog.xor.StringFogImpl'
+    enable true
+    kg new RandomKeyGenerator()
+    mode StringFogMode.base64
+}
+android {
+    namespace 'com.best.zoom.dou.wb.fourthqrcode'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.best.zoom.dou.wb.fourthqrcode"
+        minSdk 24
+        targetSdk 33
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug{
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    dataBinding {
+        //noinspection DataBindingWithoutKapt
+        enabled = true
+    }
+}
+
+dependencies {
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.github.megatronking.stringfog:xor:5.0.0'
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
