@@ -75,6 +75,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_scanner_2"
                 android:drawableStart="@drawable/ic_copy"
+                android:drawablePadding="2dp"
                 android:gravity="center"
                 android:paddingHorizontal="18dp"
                 android:paddingVertical="8dp"
@@ -103,6 +104,7 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_scanner_2"
                 android:drawableStart="@drawable/ic_ss"
+                android:drawablePadding="2dp"
                 android:gravity="center"
                 android:paddingHorizontal="18dp"
                 android:paddingVertical="8dp"
@@ -134,7 +136,8 @@
                 android:gravity="center"
                 android:paddingHorizontal="18dp"
                 android:paddingVertical="8dp"
-                android:text="Copy"
+                android:text="Share"
+                android:drawablePadding="2dp"
                 android:textColor="#FF18502C"
                 android:textSize="15sp" />
 
